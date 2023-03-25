@@ -2,6 +2,11 @@
 Repo host code for ansible tower docker image
 
 
+Ansible Requirements: https://docs.ansible.com/ansible-tower/latest/html/installandreference/requirements_refguide.html
+
+Ubuntu OS limitations: https://techexpert.tips/ansible/ansible-tower-installation-ubuntu-linux/
+
+
 Dockerfile for standalone [Ansible Tower](https://www.ansible.com/tower) 3.x+
 
 # Build

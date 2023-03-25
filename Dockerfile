@@ -1,9 +1,11 @@
-FROM ubuntu:18.04
+FROM ubuntu:16.04
 
 WORKDIR /opt
 
 #  get your versions from here https://releases.ansible.com/ansible-tower/setup/
-ENV ANSIBLE_TOWER_VER 3.8.6-1
+# 3.5.3-1
+# 3.8.6-1
+ENV ANSIBLE_TOWER_VER 3.5.3-1
 
 ENV PG_DATA /var/lib/postgresql/9.6/main
 ENV AWX_PROJECTS /var/lib/awx/projects
@@ -32,10 +34,19 @@ RUN apt-get -qq update \
 			debconf \
 			apt-transport-https \
 			sudo \
-	&& locale-gen "en_US.UTF-8" \
+            wget\
+            software-properties-common \
+    && locale-gen "en_US.UTF-8" \
 	&& echo "locales	locales/default_environment_locale	select	en_US.UTF-8" | debconf-set-selections \
-	&& dpkg-reconfigure locales \
-	&& mkdir -p /var/log/tower \
+	&& dpkg-reconfigure locales
+
+RUN apt-add-repository ppa:ansible/ansible
+RUN apt-get update \
+    && apt-get install -yqq ansible
+
+RUN ansible --version
+
+RUN mkdir -p /var/log/tower \
 	&& tar xvf ansible-tower-setup-${ANSIBLE_TOWER_VER}.tar.gz \
 	&& rm -f ansible-tower-setup-${ANSIBLE_TOWER_VER}.tar.gz \
     && pip install ansible \
