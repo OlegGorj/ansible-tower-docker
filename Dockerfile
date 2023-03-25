@@ -2,6 +2,7 @@ FROM ubuntu:16.04
 
 WORKDIR /opt
 
+
 #  get your versions from here https://releases.ansible.com/ansible-tower/setup/
 ENV ANSIBLE_TOWER_VER 3.8.6-2  # 3.2.1
 
