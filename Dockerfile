@@ -5,7 +5,7 @@ WORKDIR /opt
 #  get your versions from here https://releases.ansible.com/ansible-tower/setup/
 # 3.5.3-1
 # 3.8.6-1
-ENV ANSIBLE_TOWER_VER 3.5.4-1
+ENV ANSIBLE_TOWER_VER 3.8.6-2
 
 ENV PG_DATA /var/lib/postgresql/9.6/main
 ENV AWX_PROJECTS /var/lib/awx/projects
