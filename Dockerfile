@@ -1,63 +1,50 @@
-FROM ubuntu:16.04
+FROM ubuntu:xenial
 
-WORKDIR /opt
+WORKDIR /tmp/tower-installer
 
-#  get your versions from here https://releases.ansible.com/ansible-tower/setup/
-# 3.5.3-1
-# 3.8.6-1
-ENV ANSIBLE_TOWER_VER 3.8.6-2
+# update and install packages
+RUN apt-get update -y \
+    && apt-get install software-properties-common curl vim locales sudo apt-transport-https ca-certificates -y
 
+# install ansible
+RUN apt-add-repository ppa:ansible/ansible \
+    && apt-get update -y \
+    && apt-get install ansible -y
+
+# Set the locale
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+# define tower version and PG_DATA
+ENV TOWER_VERSION 3.5.6-1
 ENV PG_DATA /var/lib/postgresql/9.6/main
 ENV AWX_PROJECTS /var/lib/awx/projects
-ENV LC_ALL "en_US.UTF-8"
-ENV LANGUAGE "en_EN:en"
-ENV LANG "en_US.UTF-8"
-ENV DEBIAN_FRONTEND "noninteractive"
 
-ADD https://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-${ANSIBLE_TOWER_VER}.tar.gz ansible-tower-setup-${ANSIBLE_TOWER_VER}.tar.gz
+# download tower installer
+RUN curl -sSL http://releases.ansible.com/ansible-tower/setup/ansible-tower-setup-${TOWER_VERSION}.tar.gz -o ansible-tower-setup-${TOWER_VERSION}.tar.gz \
+    && tar xvf ansible-tower-setup-${TOWER_VERSION}.tar.gz \
+    && rm -f ansible-tower-setup-${TOWER_VERSION}.tar.gz
 
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-COPY inventory inventory
+# change working dir
+WORKDIR /tmp/tower-installer/ansible-tower-setup-${TOWER_VERSION}
 
+# create var folder
+RUN mkdir /var/log/tower
 
-RUN apt-get -qq update \
-	&& apt-get -yqq upgrade \
-	&& apt-get -yqq install \
-			locales \
-			gnupg2 \
-			gnupg \
-			libpython2.7 \
-			python3 \
-			python-pip \
-			python-dev \
-			ca-certificates \
-			debconf \
-			apt-transport-https \
-			sudo \
-            wget\
-            software-properties-common \
-    && locale-gen "en_US.UTF-8" \
-	&& echo "locales	locales/default_environment_locale	select	en_US.UTF-8" | debconf-set-selections \
-	&& dpkg-reconfigure locales
+# copy inventory
+ADD inventory inventory
 
-RUN apt-add-repository ppa:ansible/ansible
-RUN apt-get update \
-    && apt-get install -yqq ansible
+# install tower
+RUN ./setup.sh
 
-RUN ansible --version
+# add entrypoint script
+ADD docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-RUN mkdir -p /var/log/tower \
-	&& tar xvf ansible-tower-setup-${ANSIBLE_TOWER_VER}.tar.gz \
-	&& rm -f ansible-tower-setup-${ANSIBLE_TOWER_VER}.tar.gz \
-    && pip install ansible \
-	&& mv inventory ansible-tower-setup-${ANSIBLE_TOWER_VER}/inventory
+VOLUME ["${PG_DATA}", "${AWX_PROJECTS}", "/certs"]
+EXPOSE 80 443
 
-RUN cd /opt/ansible-tower-setup-${ANSIBLE_TOWER_VER} \
-	&& ./setup.sh \
-	&& chmod +x /docker-entrypoint.sh
-
-# volumes and ports
-VOLUME ["${PG_DATA}", "${AWX_PROJECTS}", "/certs",]
-EXPOSE 443
-
-CMD ["/docker-entrypoint.sh", "ansible-tower"]
+# configure entrypoint
+ENTRYPOINT ["/docker-entrypoint.sh", "ansible-tower"]
